@@ -46,11 +46,10 @@ sed -i '3d' filename.txt
 
 
 Delete multiple lines (e.g., from line 2 to 4):
-
 sed -i '2,4d' filename.txt
+
+
 Delete a line containing specific text:
-
-
 sed -i '/some text/d' filename.txt
 📌 Removes all lines that contain "some text".
 
@@ -69,7 +68,40 @@ Press dd to delete it.
 Save and exit with :wq.
 
 
+🔹 Delete a file using its full path
+If two files have the same name but are in different directories, use the full path:
 
+rm /path/to/file/filename.txt
+📌 Example:
+
+rm /home/user/Documents/filename.txt
+
+
+🔹 Delete by date or size using ls and rm
+If two files with the same name exist in the same directory but have different content (different timestamps or sizes), list them with:
+ls -lt filename.txt
+📌 This sorts files by date.
+
+
+Delete the older file:
+ls -lt filename.txt | tail -1 | awk '{print $9}' | xargs rm
+📌 This removes the oldest file if there is a duplicate.
+
+
+🔹 Delete by inode (for hard links in the same directory)
+Check inode numbers of the files:
+ls -i filename.txt
+📌 This displays unique inode numbers.
+
+Delete a file by inode:
+find . -inum 123456 -delete
+📌 Replace 123456 with the actual inode number.
+
+
+🔹 Delete with confirmation (rm -i)
+If you are unsure which file to delete, use:
+rm -i filename.txt
+📌 Linux will ask for confirmation before deleting.
 
 
 
@@ -134,10 +166,47 @@ awk 'NR!=5' filename.txt > temp && mv temp filename.txt
 
 🔹 Изтриване на ред в vim (ръчно редактиране)
 Отвори файла с vim:
-bash
-Copy
-Edit
 vim filename.txt
 Отиди на реда, който искаш да изтриеш.
 Натисни dd, за да го изтриеш.
 Запази с :wq.
+
+
+
+
+В Linux не можеш да имаш два напълно еднакви файла в една и съща директория, защото файловите имена трябва да са уникални.
+Но ако имаш два файла със същото име в различни директории, можеш да изтриеш конкретния файл, който искаш, по няколко начина:
+
+🔹 Изтриване по пълен път на файла
+Ако двата файла са в различни директории, просто използвай пълния път:
+rm /path/to/file/filename.txt
+
+📌 Например:
+rm /home/user/Documents/filename.txt
+
+
+🔹 Изтриване по дата или размер с ls и rm
+Ако двата файла са в една директория, но са с различно съдържание (различни дати/размери), можеш да видиш детайли с:
+ls -lt filename.txt
+📌 Това ще покаже файловете, подредени по дата.
+
+Изтриване на по-стария файл:
+ls -lt filename.txt | tail -1 | awk '{print $9}' | xargs rm
+📌 Изтрива по-стария файл, ако има дубликат.
+
+
+🔹 Изтриване по inode (ако файловете са дубликати в една папка, създадени чрез ln)
+Провери inode номерата на файловете:
+ls -i filename.txt
+📌 Това ще покаже inode номерата (уникални идентификатори за файлове в една директория).
+
+
+Изтрий файла по inode:
+find . -inum 123456 -delete
+📌 Заместваме 123456 с реалния inode номер.
+
+
+🔹 Изтриване с потвърждение (rm -i)
+Ако не си сигурен кой файл да изтриеш, използвай:
+rm -i filename.txt
+📌 Linux ще те попита преди изтриването.
