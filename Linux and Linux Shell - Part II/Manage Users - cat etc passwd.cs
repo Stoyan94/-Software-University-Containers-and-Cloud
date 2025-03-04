@@ -1,4 +1,79 @@
-﻿Командата cat /etc/passwd в Linux и Unix-базирани операционни системи ще покаже съдържанието на файла /etc/passwd.
+﻿The command cat /etc/passwd in Linux and Unix-based operating systems will display the contents of the /etc/passwd file.
+
+This file contains information about the system's users, with each line describing a single user and including the following fields, separated by colons (:):
+
+Username
+Password (usually x, if /etc/shadow is used to store passwords)
+User ID (UID)
+Group ID (GID)
+Full name or additional user information
+Home directory
+Shell (command interpreter)
+
+Example content of /etc/passwd:
+root:x: 0:0:root:/ root:/ bin / bash
+user: x: 1000:1000:John Doe:/ home / user:/ bin / bash
+nobody: x: 65534:65534:nobody:/ nonexistent:/ usr / sbin / nologin
+
+Explanation of each field:
+
+1.Root user:
+root:x: 0:0:root:/ root:/ bin / bash
+root – Username (login name).
+This is the name the user logs in with.
+root is the superuser (administrator).
+x – Password (or a reference to /etc/shadow).
+In the past, the encrypted password was stored here, but now it is usually x, meaning the actual password is in /etc/shadow for security.
+
+0 – User ID (UID).
+Each user has a unique UID.
+
+0 means this is the root user.
+Regular users typically have UIDs starting from 1000.
+
+0 – Group ID (GID).
+Defines the user’s primary group.
+Here, the GID is also 0, meaning root belongs to the group with ID 0 (usually root).
+root – Full name or additional user info.
+Often contains the user's full name but can be left empty.
+
+For root, it’s simply "root".
+/root – Home directory.
+Indicates where the user’s personal files are stored.
+For root, this is /root.
+
+For regular users, it’s usually /home/username.
+/bin/bash – Shell (command interpreter).
+Specifies which shell is used when the user logs in.
+bash (Bourne Again Shell) is the most commonly used shell.
+It can also be /bin/sh, /bin/zsh, or /usr/sbin/nologin (if login is not allowed).
+
+2. Regular user:
+user:x: 1000:1000:John Doe:/ home / user:/ bin / bash
+user – Username.
+x – Password stored in /etc/shadow.
+1000 – UID (regular users usually start from 1000).
+1000 – GID (the user's primary group has the same ID as the UID).
+John Doe – Full name.
+/home/user – Home directory.
+/bin/bash – Default shell.
+
+3. System user without interactive access:
+nobody:x: 65534:65534:nobody:/ nonexistent:/ usr / sbin / nologin
+nobody – A special user with minimal permissions, used by the system.
+x – Password is in /etc/shadow.
+65534 – UID (commonly reserved for nobody, with the lowest privileges).
+65534 – GID (group is also nobody).
+nobody – Description.
+/nonexistent – No real home directory, since this user should not have access to personal files.
+/usr/sbin/nologin – Prevents login to the system.
+
+
+
+
+
+
+Командата cat /etc/passwd в Linux и Unix-базирани операционни системи ще покаже съдържанието на файла /etc/passwd.
 
 Този файл съдържа информация за потребителите на системата, като всяки ред описва един потребител и включва следните полета, разделени с двоеточие (:):
 
