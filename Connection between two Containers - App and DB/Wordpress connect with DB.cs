@@ -1,5 +1,12 @@
 EN Version: 
 
+docker run -d --name wordpress-website 
+    -e WORDPRESS_DB_HOST=wordpress_db 
+    -e WORDPRESS_DB_USER=wordpress 
+    -e WORDPRESS_DB_PASSWORD=wordpress 
+    -e WORDPRESS_DB_NAME=wordpressdb 
+    -p 80:80--network stoyan_mreja
+
 ---
 
 This command creates and starts a new Docker container for a WordPress site.Let’s go through each parameter and explain what it does:
@@ -68,7 +75,16 @@ Hope this is clear now! Let me know if you need further assistance.
 
 BG Version:
 
-Тази команда създава и стартира нов Docker контейнер за WordPress сайт. Нека разгледаме всеки от параметрите и какво прави той:
+    docker run -d --name wordpress-website 
+    -e WORDPRESS_DB_HOST=wordpress_db 
+    -e WORDPRESS_DB_USER=wordpress 
+    -e WORDPRESS_DB_PASSWORD=wordpress 
+    -e WORDPRESS_DB_NAME=wordpressdb 
+    -p 80:80--network stoyan_mreja
+
+
+Тази команда създава и стартира нов Docker контейнер за WordPress сайт.
+Нека разгледаме всеки от параметрите и какво прави той:
 
 ### 1. `docker run`
 Това е основната команда, която стартира нов контейнер.
@@ -112,12 +128,14 @@ BG Version:
 
 ### 9. `--network stoyan_mreja`
 Това задава мрежата, към която ще бъде свързан контейнерът.
-В този случай се използва мрежата **stoyan_mreja**. Тази мрежа трябва да е съществуваща в Docker и позволява на контейнерите да комуникират помежду си.
+В този случай се използва мрежата **stoyan_mreja**. 
+Тази мрежа трябва да е съществуваща в Docker и позволява на контейнерите да комуникират помежду си.
 
 
 ### Обобщение:
 Тази команда стартира нов Docker контейнер с WordPress, който е конфигуриран да се свързва с база данни в друг контейнер чрез зададените променливи на средата. 
-Контейнерът ще бъде наименуван "wordpress-website" и ще бъде достъпен на порт 80. Контейнерът ще бъде свързан с Docker мрежата **stoyan_mreja**.
+Контейнерът ще бъде наименуван "wordpress-website" и ще бъде достъпен на порт 80. 
+Контейнерът ще бъде свързан с Docker мрежата **stoyan_mreja**.
 
 
 Тази конфигурация предполага, че имате база данни, работеща в отделен контейнер, който се нарича **wordpress_db** и работи в същата мрежа.
