@@ -4,8 +4,10 @@ docker run -d --name wordpress-website
     -e WORDPRESS_DB_HOST=wordpress_db 
     -e WORDPRESS_DB_USER=wordpress 
     -e WORDPRESS_DB_PASSWORD=wordpress 
-    -e WORDPRESS_DB_NAME=wordpressdb 
+    -e WORDPRESS_DB_NAME=wordpressdb
+    -v %cd%\wp-data:\var\www\html
     -p 80:80--network stoyan_mreja
+       wordpress
 
 ---
 
@@ -40,14 +42,23 @@ This sets the password for the **wordpress** user when connecting to the databas
 This sets the name of the database that WordPress will use. In this case, the database is called **wordpressdb**.
 
 
-8. `-p 80:80`
+8. -v %cd%\wp-data:/ var / www / html
+This will mount the wp-data directory from your current location on the host machine to the 
+/var/www/html directory in the container, where WordPress will use the files (such as themes, plugins, and media files).
+
+
+9. `-p 80:80`
 This tells Docker to map port 80 of the container to port 80 of the host machine. 
 This means the WordPress site will be accessible on port 80 (the standard HTTP port) on the host machine.
 
 
-9. `--network stoyan_mreja`
+10. `--network stoyan_mreja`
 This sets the network the container will be connected to. In this case, the network is **stoyan_mreja**. 
 This network must already exist in Docker and allows containers to communicate with each other.
+
+
+11. wordpress
+The Docker image that contains all the necessary files and configurations to run WordPress.
 
 
 ### Summary:
@@ -80,7 +91,9 @@ BG Version:
     -e WORDPRESS_DB_USER=wordpress 
     -e WORDPRESS_DB_PASSWORD=wordpress 
     -e WORDPRESS_DB_NAME=wordpressdb 
+    -v %cd%\wp-data:\var\www\html
     -p 80:80--network stoyan_mreja
+      wordpress
 
 
 Тази команда създава и стартира нов Docker контейнер за WordPress сайт.
@@ -121,15 +134,23 @@ BG Version:
 В случая базата данни се нарича **wordpressdb**.
 
 
-### 8. `-p 80:80`
+### 8. -v %cd%\wp-data:\var\www\html
+Това ще монтира директорията wp-data от текущото ти местоположение на хост машината в директорията0
+/var/www/html в контейнера, където WordPress ще използва файловете (като теми, плъгини и медийни файлове).
+
+### 9. `-p 80:80`
 Това указва на Docker да свърже порта **80** на контейнера с порта **80** на хост машината.
 Това означава, че WordPress сайтът ще бъде достъпен на порт 80 (стандартният HTTP порт) на хост машината.
 
 
-### 9. `--network stoyan_mreja`
+### 10. `--network stoyan_mreja`
 Това задава мрежата, към която ще бъде свързан контейнерът.
 В този случай се използва мрежата **stoyan_mreja**. 
 Тази мрежа трябва да е съществуваща в Docker и позволява на контейнерите да комуникират помежду си.
+
+
+### 11. wordpress 
+Docker изображението, което съдържа всички необходими файлове и конфигурации за стартиране на WordPress.
 
 
 ### Обобщение:
