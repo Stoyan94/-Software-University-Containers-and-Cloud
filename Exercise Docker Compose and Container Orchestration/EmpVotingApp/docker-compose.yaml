@@ -1,0 +1,42 @@
+services:
+    redis:
+        container_name: redis
+        networks:
+            - backend
+        image: redis
+    postgres:
+        container_name: db
+        networks:
+            - backend
+        volumes:
+            - database:/var/lib/postgres/data
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        image: postgres
+    vote:
+        container_name: vote
+        networks:
+            - fontend
+            - backend
+        ports:
+            - 5000:80
+        image: vote
+    result:
+        container_name: result
+        networks:
+            - fontend 
+            - backend
+        ports:
+            - 5001:80
+        image: result
+    worker:
+        container_name: worker
+        networks:
+            - backend
+        image: worker
+networks:
+    backend:        
+    fontend:       
+volumes:
+    database:
