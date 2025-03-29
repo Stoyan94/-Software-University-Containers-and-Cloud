@@ -1,0 +1,28 @@
+services:
+  sqlserver:
+    container_name: sqlserver
+    image: mcr.microsoft.com/mssql/server
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=yourStrongPassword12#
+    volumes:
+      - sqldata:/var/opt/mssql
+    networks:
+      - task_board
+
+  web_app:
+    container_name: web_app
+    build:
+      dockerfile: ./Taskboard.WebApp/Dockerfile
+    ports:
+      - "5000:80"
+    restart: on-failure
+    networks:
+      - task_board
+
+volumes:
+  sqldata:
+networks:
+  task_board:
