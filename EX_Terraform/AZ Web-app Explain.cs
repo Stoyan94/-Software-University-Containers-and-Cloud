@@ -1,176 +1,308 @@
 ﻿ENG VERSION:
 
-### 1. **terraform block**
+---
+
+## 🧠 **1. `terraform` block**
+
 ```hcl
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "4.25.0"
+terraform
+{
+    required_providers
+    {
+        azurerm = {
+            source = "hashicorp/azurerm"
+          version = "4.25.0"
+        }
     }
-  }
 }
 ```
-🔹 **What is this ? **
-Here we tell Terraform which provider to use. In this case, it's **Azure** (via `azurerm`).
 
-🔹 **Why?**  
-Because we want Terraform to communicate with Azure and create resources there (like websites, databases, etc.).
+### ✅ What it does:
+-Declares that we’re using **Azure Resource Manager(azurerm)** as our cloud provider.
+-Specifies the** provider source** as `"hashicorp/azurerm"` – official from HashiCorp.
+- Pins the version to `4.25.0`, avoiding breaking changes from future versions.
 
-🔹 **The version** is important to ensure we’re using compatible and stable code.
+### 💡 Pro tips:
+- To always use the latest compatible version (not ideal for production):
+  ```hcl
+  version = "~> 4.0"
+  ```
+- Terraform fetches this provider from the [Terraform Registry] (https://registry.terraform.io/).
 
 ---
 
-### 2. **provider "azurerm"**
+## 🌍 **2. `provider` block (azurerm)**
+
 ```hcl
 provider "azurerm" {
   features {}
-  subscription_id = "*******************"
+  subscription_id = "4f627dc8-8f5a-4112-a072-9284f6d182d0"
 }
 ```
-🔹 **What is this ? **
-This tells Terraform that we will be using a specific account(called a "subscription") in Azure.
 
-🔹 `features {}` — This is just required to enable basic Azure resource capabilities.
+### ✅ What it does:
+-Configures Azure as the target cloud for deploying infrastructure.
+- `features {}` is required with modern `azurerm` versions, even if left empty.
+- Specifies a particular Azure `subscription_id` for resource provisioning.
+
+### 💡 Best practices:
+- Use environment variables or Azure CLI for authentication in production.
+- Run `az login` for local development authentication.
 
 ---
 
-### 3. **random_integer**
+## 🎲 **3. `random_integer` resource**
+
 ```hcl
 resource "random_integer" "random_integer" {
   min = 10000
   max = 99999
 }
 ```
-🔹 **What is this ? **
-Generates a random number between 10000 and 99999.
 
-🔹 **Why?**  
-To make resource names unique. For example, `TaskBordRG54789`, so there are no conflicts with other resources in Azure.
+### ✅ What it does:
+-Generates a** random number** between 10000 and 99999.
+- This is typically used as a **suffix** in resource names for uniqueness.
+
+### 💡 Why it matters:
+- Some Azure resources require globally unique names (e.g., App Services, SQL servers).
+- This ensures no name collision during `terraform apply`.
 
 ---
 
-### 4. **azurerm_resource_group**
+## 🏗️ **4. `azurerm_resource_group`**
+
 ```hcl
 resource "azurerm_resource_group" "arg" {
-  name     = "TaskBordRG${random_integer.random_integer.result}"
-  location = "italy North"
+  name     = var.resource_group_name
+  location = var.resource_group_location
 }
 ```
-🔹 **What is this ? **
-This is a * *group * *where all related resources will be stored. Think of it like a **folder in the cloud**.
 
-🔹 **Why?**  
-It’s easier to manage and delete things when they are grouped together.  
+### ✅ What it does:
+-Creates an Azure Resource Group – a logical container for all resources.
 
-🔹 **`location`** specifies the physical location of the data center — "Italy North" (cloud data center in Italy).
+### 💡 Tips:
+- Deleting the group in Azure deletes **all** resources inside it.
+- Ensure all resources share the same region as the resource group.
 
 ---
 
-### 5. **azurerm_service_plan**
+## ☁️ **5. `azurerm_service_plan`**
+
 ```hcl
 resource "azurerm_service_plan" "asp" {
-  name                = "TaskBordServicePlan${random_integer.random_integer.result}"
+  name                = var.sql_server_name
   resource_group_name = azurerm_resource_group.arg.name
   location            = azurerm_resource_group.arg.location
   os_type             = "Linux"
   sku_name            = "F1"
 }
 ```
-🔹 **What is this ? **
-This is a "plan" for the web application — how many resources(CPU, RAM) it will get.
 
-🔹 `sku_name = "F1"` — This is a * *free plan * *, the most basic one.
+### ✅ What it does:
+-Creates an App Service Plan (the hosting environment for Web Apps).
+- `sku_name = "F1"` is the **free** tier.
 
-🔹 `os_type = "Linux"` — The application will run on Linux, not Windows.
+### 💡 Considerations:
+- `os_type = "Linux"` means the app will run on a Linux container.
+- `F1` has serious limitations (no custom domains, no Always On).
+- Use `B1`, `P1v2`, or higher for production.
 
--- -
+---
 
-### 6. **azurerm_linux_web_app**
+## 🧑‍💻 **6. `azurerm_linux_web_app`**
+
 ```hcl
 resource "azurerm_linux_web_app" "alwa" {
-    name = "TaskoBordStoyan"...
+  ...
+  site_config {
+    application_stack {
+      dotnet_version = "6.0"
+    }
+    always_on = false
+  }
+  connection_string {
+    ...
+  }
 }
 ```
-🔹 **What is this ? **
-This is the * *actual website * *that will be hosted in the cloud — a .NET application.
 
-🔹 `name = "TaskoBordStoyan"` — The name of the web app, it must be globally unique.
+### ✅ What it does:
+-Deploys a Web App on Azure App Services running on Linux.
+- Configures the .NET 6.0 runtime.
+- Attaches a database connection string.
 
-🔹 `site_config > application_stack > dotnet_version = "6.0"`  
-Here we specify that the site is a .NET 6.0 application.
-
-🔹 `connection_string` — This is the **information for connecting to the database**:
-```text
-Data Source = where the database is located;
-Initial Catalog = the name of the database;
-User ID and Password = login credentials;
-```
+### 💡 Tips:
+- `always_on = false` is required for free plans, but apps may "go to sleep".
+- You can deploy Docker images, custom domains, and enable SSL.
+- Add deployment slots for staging environments.
 
 ---
 
-### 7. **azurerm_mssql_server**
+## 🗄️ **7. `azurerm_mssql_server`**
+
 ```hcl
 resource "azurerm_mssql_server" "sqlserver" {
-  name = "takskboard-s${random_integer.random_integer.result}"
-  ...
+  name                         = var.sql_server_name
+  resource_group_name          = azurerm_resource_group.arg.name
+  location                     = azurerm_resource_group.arg.location
+  version                      = "12.0"
+  administrator_login          = var.sql_admin_login
+  administrator_login_password = var.sql_admin_login_password
+  minimum_tls_version          = "1.2"
 }
 ```
-🔹 **What is this ? **
-This is an * *SQL server * * in Azure — a machine that hosts the database.
 
-🔹 `administrator_login/password` — Admin credentials for login.
+### ✅ What it does:
+-Creates a managed **SQL Server** in Azure.
+- Configures admin login and password.
 
-🔹 `version = "12.0"` — The version of SQL Server.
+### 💡 Notes:
+- `version = "12.0"` is the default backend version for Azure SQL, not SQL Server 2012.
+- Direct machine access is **not possible** – only via connection strings/firewalls.
 
 ---
 
-### 8. **azurerm_mssql_database**
+## 💾 **8. `azurerm_mssql_database`**
+
 ```hcl
 resource "azurerm_mssql_database" "db" {
-  name           = "taskboarddb${random_integer.random_integer.result}"
-  ...
+  name                 = var.sql_database_name
+  server_id            = azurerm_mssql_server.sqlserver.id
+  collation            = "SQL_Latin1_General_CP1_CI_AS"
+  license_type         = "LicenseIncluded"
+  max_size_gb          = 2
+  sku_name             = "S0"
+  enclave_type         = "VBS"
+  zone_redundant       = false
+  storage_account_type = "Zone"
+  geo_backup_enabled   = false
 }
 ```
-🔹 **What is this ? **
-The * *actual database * *that will be used by the site.
 
-🔹 `sku_name = "S0"` — Defines how powerful the database will be (this is the basic paid one).
+### ✅ What it does:
+-Provisions a new **database * * in the SQL server.
 
-🔹 `enclave_type = "VBS"` — Security improvement (virtual protection).
+### 💡 Considerations:
+- `S0` is the lowest paid tier (ideal for testing).
+- `geo_backup_enabled = false` disables automatic cross-region backups.
+- `enclave_type = "VBS"` is for confidential computing – can be omitted in basic setups.
 
 ---
 
-### 9. **azurerm_mssql_firewall_rule**
+## 🔥 **9. `azurerm_mssql_firewall_rule`**
+
 ```hcl
 resource "azurerm_mssql_firewall_rule" "firewall" {
-  name             = "FirewallRule1"
-  ...
+  name             = var.firewall_rule_name
+  server_id        = azurerm_mssql_server.sqlserver.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
 ```
-🔹 **What is this ? **
-This is a * *firewall rule * *that says: "allow connections to the SQL server".
 
-🔹 `0.0.0.0` means: allow** all IP addresses** (it might not be the most secure, but it’s convenient for testing).
+### ✅ What it does:
+-Opens the database to allow **Azure services** access.
+
+### 💡 Important:
+- `0.0.0.0` is a **special Azure-reserved IP** allowing internal services.
+-To allow your machine, set `start_ip_address = "your.public.ip"`.
 
 ---
 
-### 10. **azurerm_app_service_source_control**
+## 🔗 **10. `azurerm_app_service_source_control`**
+
 ```hcl
 resource "azurerm_app_service_source_control" "azsc" {
-  app_id   = azurerm_linux_web_app.alwa.id
-  repo_url = "https://github.com/Stoyan94/TaskBoard-Azure-Deploy"
-  ...
+  app_id                 = azurerm_linux_web_app.alwa.id
+  repo_url               = var.repo_url
+  branch                 = "master"
+  use_manual_integration = true
 }
 ```
-🔹 **What is this ? **
-Links the web application with the **code server** in GitHub.
 
-🔹 `branch = "master"` — It will take the code from the main branch.
+### ✅ What it does:
+-Connects the Web App to a GitHub repository.
+- Configures deployments from the `master` branch.
 
-🔹 `use_manual_integration = true` — We’re saying there’s no automatic deployment, but it’s managed manually.
+### 💡 Details:
+- `use_manual_integration = true` means **no automatic webhook**.
+- Set it to `false` for automatic deploy on push.
+- For advanced CI/CD: consider GitHub Actions or Azure DevOps Pipelines.
 
 ---
+
+## 🧮 **11. `variables.tf`**
+
+```hcl
+variable "sql_database_name" {
+  type        = string
+  description = "The name of the database."
+}
+```
+
+### ✅ What it does:
+-Declares * *input variables** required by the Terraform config.
+
+### 💡 Usage:
+- You can define defaults:
+  ```hcl
+  variable "sql_database_name" {
+    default = "MyDB"
+  }
+  ```
+-Provide values via:
+  - `-var - file = "values.tfvars"`
+  - `-var 'sql_database_name=abc'`
+  -Environment variable: `TF_VAR_sql_database_name = abc`
+
+---
+
+## 🧠 Bonus: Suggestions & Best Practices
+
+-Use `locals` for consistent naming:
+  ```hcl
+  locals
+{
+    suffix = random_integer.random_integer.result
+    sql_server_name = "sql-${local.suffix}"
+  }
+  ```
+
+- Add an `outputs.tf` to expose useful data:
+  ```hcl
+  output "webapp_url" {
+    value = azurerm_linux_web_app.alwa.default_site_hostname
+  }
+  ```
+
+- Split your configuration into:
+  - `main.tf` – core resources
+  - `provider.tf` – provider setup
+  - `variables.tf` – input variables
+  - `outputs.tf` – result values
+  - `values.tfvars` – actual values
+
+---
+
+## 🔚 Summary Table:
+
+| Component           | What is it?             | What does it do? |
+|---------------------|-------------------------|------------------|
+| Terraform Provider  | Sets up connection with Azure | Authorizes access |
+| Resource Group      | Folder in the cloud     | Gathers related resources together |
+| Service Plan        | Plan for the site       | Defines how many resources the web app will use |
+| Linux Web App       | Web application (.NET)  | This is your website |
+| SQL Server          | Host for databases      | The place where the database is stored |
+| SQL Database        | The actual database     | Connects to the site |
+| Firewall Rule       | Access to the database  | Allows external access |
+| Source Control      | Links to GitHub         | Automatically loads code |
+
+---
+
+Ако искаш, мога да го запазя като Markdown, PDF или да добавя примерна структура на директория. Кажи какво следва, мастер. 😎
+
 
 ### 🧠 Summary:
 
@@ -187,7 +319,6 @@ Links the web application with the **code server** in GitHub.
 
 ---
 
-This should now be easy to follow! Let me know if you need further details.
 
 
 
@@ -195,12 +326,18 @@ This should now be easy to follow! Let me know if you need further details.
 
 BG VERSION:
 
-Супер, Стояне! Ще ти обясня целия Terraform код, **стъпка по стъпка**, така че дори някой без технически опит да разбере какво се случва.
-Представи си, че **създаваш уеб приложение в облака (в случая Azure)**, и използваш Terraform като автоматизиран „строител“, който изпълнява твоите инструкции.
+
+- `terraform` блок
+- `provider`
+- `resource` за всяка услуга (resource group, service plan, web app, SQL сървър и т.н.)
+- `variables`
+- Динамични имена с `random_integer`
+- Идеи за подобрения и добри практики
 
 ---
 
-## 🔧 1. **terraform block**
+## 🔧 **1. terraform блок**:
+
 ```hcl
 terraform {
   required_providers {
@@ -211,165 +348,273 @@ terraform {
   }
 }
 ```
-🔹 **Какво е това?**  
-Тук казваме на Terraform кой доставчик (provider) ще използваме. В случая това е **Azure** (через `azurerm`).
 
-🔹 **Защо?**  
-Защото искаме Terraform да говори с Azure и да създава ресурси там (като сайтове, бази данни и т.н.).
+### ✅ Какво прави:
+- Декларира, че проектът използва **Azure Resource Manager (azurerm)** като доставчик на ресурси.
+- Задава **източника** на доставчика: `"hashicorp/azurerm"` – официален от HashiCorp.
+- Фиксира версията до `4.25.0`, което предотвратява проблеми от промени в API между версии.
 
-🔹 **Версията** е важна, за да сме сигурни, че използваме съвместим и стабилен код.
+### 💡 Полезни факти:
+- Ако искаш винаги най-новата версия (не се препоръчва за production), може да пишеш:
+  ```hcl
+  version = "~> 4.0"
+  ```
+- Terraform ще търси този доставчик в [Terraform Registry](https://registry.terraform.io/).
 
 ---
 
-## ☁️ 2. **provider "azurerm"**
+## 🌍 **2. provider блок (azurerm)**:
+
 ```hcl
 provider "azurerm" {
   features {}
-  subscription_id = "*******************"
+  subscription_id = "4f627dc8-8f5a-4112-a072-9284f6d182d0"
 }
 ```
-🔹 **Какво е това?**  
-Това казва на Terraform, че ще използваме конкретен акаунт (наречен „абонамент“) в Azure.
 
-🔹 `features {}` — просто се изисква, за да активира базовите възможности на Azure ресурси.
+### ✅ Какво прави:
+- Настройва Azure като целева платформа за Terraform.
+- `features {}` е изискване от новите версии на `azurerm`, дори да е празно.
+- Задава конкретно `subscription_id`, което казва в коя Azure абонаментна сметка ще се създават ресурсите.
+
+### 💡 Полезни факти:
+- За production: по-добре е `subscription_id`, `client_id`, `client_secret`, `tenant_id` да се четат от ENV или Azure CLI логин.
+- `az login` в терминал е по-добър начин за автентикация в development.
 
 ---
 
-## 🎲 3. **random_integer**
+## 🎲 **3. random_integer ресурс**
+
 ```hcl
 resource "random_integer" "random_integer" {
   min = 10000
   max = 99999
 }
 ```
-🔹 **Какво е това?**  
-Генерира произволно число между 10000 и 99999.
 
-🔹 **Защо?**  
-За да направим имената на ресурсите уникални. Например, `TaskBordRG54789`, така няма конфликт с други ресурси в Azure.
+### ✅ Какво прави:
+- Генерира **случайно число** между 10000 и 99999.
+- Това число се използва като **суфикс** за имената на ресурсите, за да са уникални.
+
+### 💡 Защо е важно:
+- Azure не позволява дублирани имена на някои ресурси (например App Services, SQL сървъри).
+- Използвайки `random_integer`, всяко `terraform apply` ще създаде уникални ресурси.
 
 ---
 
-## 📦 4. **azurerm_resource_group**
+## 🏗️ **4. azurerm_resource_group**
+
 ```hcl
 resource "azurerm_resource_group" "arg" {
-  name     = "TaskBordRG${random_integer.random_integer.result}"
-  location = "italy North"
+  name     = var.resource_group_name
+  location = var.resource_group_location
 }
 ```
-🔹 **Какво е това?**  
-Това е **група**, в която ще се съхраняват всички свързани ресурси. Представи си я като **папка в облака**.
 
-🔹 **Защо?**  
-По-лесно е да управляваш и триеш неща, когато са групирани.  
+### ✅ Какво прави:
+- Създава Azure Resource Group – логически контейнер, който събира всички ресурси.
 
-🔹 **`location`** е физическо място на датацентъра — "Italy North" (облачен център в Италия).
+### 💡 Особености:
+- Ако искаш да изтриеш всичко наведнъж, просто изтрий тази група в Azure – всичко вътре пада.
+- `location` трябва да съвпада с другите ресурси (пример: "North Europe").
 
 ---
 
-## 💻 5. **azurerm_service_plan**
+## ☁️ **5. azurerm_service_plan**
+
 ```hcl
 resource "azurerm_service_plan" "asp" {
-  name                = "TaskBordServicePlan${random_integer.random_integer.result}"
+  name                = var.sql_server_name
   resource_group_name = azurerm_resource_group.arg.name
   location            = azurerm_resource_group.arg.location
   os_type             = "Linux"
   sku_name            = "F1"
 }
 ```
-🔹 **Какво е това?**  
-Това е „план“ за уеб приложение — колко ресурси (CPU, RAM) ще получи.
 
-🔹 `sku_name = "F1"` — това е **безплатен план**, най-базов.
+### ✅ Какво прави:
+- Създава App Service план, върху който ще се хоства Web App-а.
+- `sku_name = "F1"` е най-евтината (безплатна) опция.
 
-🔹 `os_type = "Linux"` — приложението ще работи под Linux, не Windows.
+### 💡 Особености:
+- `os_type = "Linux"` – това означава, че ще се използват Linux базирани контейнери.
+- `F1` има ограничения: няма custom domains, няма "Always On".
+- За production се ползва поне `B1` или `P1v2`.
 
 ---
 
-## 🌐 6. **azurerm_linux_web_app**
+## 🧑‍💻 **6. azurerm_linux_web_app**
+
 ```hcl
 resource "azurerm_linux_web_app" "alwa" {
-  name                = "TaskoBordStoyan"
   ...
+  site_config {
+    application_stack {
+      dotnet_version = "6.0"
+    }
+    always_on = false
+  }
+  connection_string {
+    ...
+  }
 }
 ```
-🔹 **Какво е това?**  
-Това е **истинският уеб сайт**, който ще бъде качен в облака — хостнато .NET приложение.
 
-🔹 `name = "TaskoBordStoyan"` — име на уеб приложението, трябва да е уникално в целия свят.
+### ✅ Какво прави:
+- Създава Web App в Azure, хостван в App Service плана.
+- Конфигурира .NET 6.0 среда.
+- Свързва се със SQL база данни чрез connection string.
 
-🔹 `site_config > application_stack > dotnet_version = "6.0"`  
-Тук казваме, че сайтът е .NET 6.0 приложение.
-
-🔹 `connection_string` — това е **информацията за свързване с базата данни**:
-```text
-Data Source = къде се намира базата данни;
-Initial Catalog = името на базата;
-User ID и Password = данни за вход;
-```
+### 💡 Особености:
+- `always_on = false` – това ще спира апликацията, когато няма трафик (при безплатни планове).
+- Можеш да добавиш слотове (deployment slots), custom domains, SSL и др.
+- Terraform може да деплойва и Docker images чрез `container_settings`.
 
 ---
 
-## 🛢️ 7. **azurerm_mssql_server**
+## 🗄️ **7. azurerm_mssql_server**
+
 ```hcl
 resource "azurerm_mssql_server" "sqlserver" {
-  name = "takskboard-s${random_integer.random_integer.result}"
-  ...
+  name                         = var.sql_server_name
+  resource_group_name          = azurerm_resource_group.arg.name
+  location                     = azurerm_resource_group.arg.location
+  version                      = "12.0"
+  administrator_login          = var.sql_admin_login
+  administrator_login_password = var.sql_admin_login_password
+  minimum_tls_version          = "1.2"
 }
 ```
-🔹 **Какво е това?**  
-Това е **SQL сървър** в Azure — машина, която хоства базата данни.
 
-🔹 `administrator_login/password` — входни данни за администратор.
+### ✅ Какво прави:
+- Създава SQL Server инстанция в Azure.
+- Използва потребител и парола за администраторски достъп.
 
-🔹 `version = "12.0"` — версията на SQL Server.
+### 💡 Особености:
+- `version = "12.0"` всъщност не е пълно MSSQL 2012, а просто версия на Azure SQL backend.
+- Не можеш да достъпваш машината директно – само чрез connection string и firewall правила.
 
 ---
 
-## 📊 8. **azurerm_mssql_database**
+## 💾 **8. azurerm_mssql_database**
+
 ```hcl
 resource "azurerm_mssql_database" "db" {
-  name           = "taskboarddb${random_integer.random_integer.result}"
-  ...
+  name                 = var.sql_database_name
+  server_id            = azurerm_mssql_server.sqlserver.id
+  collation            = "SQL_Latin1_General_CP1_CI_AS"
+  license_type         = "LicenseIncluded"
+  max_size_gb          = 2
+  sku_name             = "S0"
+  enclave_type         = "VBS"
+  zone_redundant       = false
+  storage_account_type = "Zone"
+  geo_backup_enabled   = false
 }
 ```
-🔹 **Какво е това?**  
-Истинската **база данни**, която ще се използва от сайта.
 
-🔹 `sku_name = "S0"` — определя колко мощна ще е базата (тук е основна, платена).
+### ✅ Какво прави:
+- Създава база данни в горния SQL Server.
 
-🔹 `enclave_type = "VBS"` — подобрение на сигурността (виртуална защита).
+### 💡 Полезни неща:
+- `sku_name = "S0"` – най-ниското платено ниво.
+- `enclave_type = "VBS"` – използва виртуален защитен модул (не винаги нужен).
+- `geo_backup_enabled = false` – по подразбиране Azure прави backup-и, тук ги изключваме.
 
 ---
 
-## 🔥 9. **azurerm_mssql_firewall_rule**
+## 🔥 **9. azurerm_mssql_firewall_rule**
+
 ```hcl
 resource "azurerm_mssql_firewall_rule" "firewall" {
-  name             = "FirewallRule1"
-  ...
+  name             = var.firewall_rule_name
+  server_id        = azurerm_mssql_server.sqlserver.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
 ```
-🔹 **Какво е това?**  
-Това е **правило за защитна стена**, което казва: „позволи връзка към SQL сървъра“.
 
-🔹 `0.0.0.0` значи: позволи на **всички IP адреси** (може да не е най-сигурно, но е удобно за тестове).
+### ✅ Какво прави:
+- Отваря SQL сървъра за IP-та.
+- `0.0.0.0` е специален адрес, който **позволява достъп на Azure услуги**.
+
+### 💡 Внимание:
+- Ако искаш достъп от твоето IP, трябва да зададеш `start_ip_address` и `end_ip_address` с твоя реален IP.
 
 ---
 
-## 🔗 10. **azurerm_app_service_source_control**
+## 🔗 **10. azurerm_app_service_source_control**
+
 ```hcl
 resource "azurerm_app_service_source_control" "azsc" {
-  app_id   = azurerm_linux_web_app.alwa.id
-  repo_url = "https://github.com/Stoyan94/TaskBoard-Azure-Deploy"
-  ...
+  app_id                 = azurerm_linux_web_app.alwa.id
+  repo_url               = var.repo_url
+  branch                 = "master"
+  use_manual_integration = true
 }
 ```
-🔹 **Какво е това?**  
-Свързва уеб приложението със **сървъра на кода** в GitHub.
 
-🔹 `branch = "master"` — ще вземе кода от главния клон.
+### ✅ Какво прави:
+- Свързва App Service-а с GitHub repository.
+- Задава деплой от master branch, но без автоматичен hook.
 
-🔹 `use_manual_integration = true` — казваме, че няма автоматичен deploy, а се управлява ръчно.
+### 💡 Особености:
+- Ако искаш автоматичен деплой при push, ползвай `use_manual_integration = false`.
+- Може да се настрои и CI/CD с GitHub Actions или Azure Pipelines.
+
+---
+
+## 🧮 **11. variables.tf**
+
+```hcl
+variable "sql_database_name" {
+  type        = string
+  description = "The name of the database."
+}
+```
+
+### ✅ Какво прави:
+- Това са **входни параметри**, които Terraform ще очаква от потребителя (или от `.tfvars` файл).
+
+### 💡 Особености:
+- Ако искаш да им зададеш стойности по подразбиране:
+  ```hcl
+  variable "sql_database_name" {
+    type        = string
+    default     = "MyDB"
+    description = "..."
+  }
+  ```
+- Можеш да ги предаваш с:
+  - `-var-file="values.tfvars"`
+  - `-var 'sql_database_name=abc'`
+  - или чрез ENV: `TF_VAR_sql_database_name=abc`
+
+---
+
+## 🧠 Бонус: Какво можеш да добавиш/подобриш?
+
+- Използвай `locals` за генериране на имена с `random_integer`, вместо да го правиш ръчно:
+  ```hcl
+  locals {
+    suffix = random_integer.random_integer.result
+    sql_server_name = "sql-${local.suffix}"
+  }
+  ```
+
+- Добави `outputs.tf`, за да виждаш важни неща след `terraform apply`:
+  ```hcl
+  output "webapp_url" {
+    value = azurerm_linux_web_app.alwa.default_site_hostname
+  }
+  ```
+
+- Раздели файловете:
+  - `main.tf` – ресурси
+  - `variables.tf`
+  - `outputs.tf`
+  - `provider.tf`
+  - `values.tfvars`
 
 ---
 
