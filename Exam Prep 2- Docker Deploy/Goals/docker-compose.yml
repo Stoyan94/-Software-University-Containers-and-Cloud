@@ -1,0 +1,44 @@
+services:
+    mongo:
+        networks:
+            - goals
+        container_name: mongodb
+        volumes:
+            - data:/data/db
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+            - MONGO_INITDB_ROOT_PASSWORD=secret
+        image: mongo
+    backend:
+        ports:
+            - 80:80
+        container_name: backend
+        volumes:
+            - logs:/app/logs
+        environment:
+            - MONGODB_USERNAME=mongoadmin
+            - MONGODB_PASSWORD=secret
+        networks:
+            - goals
+        image: backend
+    frontend:
+        ports:
+            - 3000:3000
+        container_name: frontend
+        volumes:
+            - C:\Users\podlo\OneDrive\Работен плот\Containers and Cloud\Exmap
+              Prep 2\Task-1\Goals\frontend\src:/app/src
+        networks:
+            - goals
+        image: frontend
+networks:
+    goals:
+        external: true
+        name: goals
+volumes:
+    data:
+        external: true
+        name: data
+    logs:
+        external: true
+        name: logs
