@@ -1,0 +1,48 @@
+services:
+  mongo:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    networks:
+      - goals
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "80:80"
+    volumes:
+      - "C:/Users/podlo/OneDrive/Работен плот/EXAM 12-04-25 Devops/repos/repo1/Task-1/ShoppingList/backend/node_modules:/app/node_modules"
+      - logs:/app/logs
+      - ./backend:/app
+    environment:
+      - MONGODB_USERNAME=mongoadmin
+      - MONGODB_PASSWORD=secret
+    networks:
+      - goals
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+    networks:
+      - goals
+
+volumes:
+  data:
+    name: data
+  logs:
+    name: logs
+
+networks:
+  goals:
+    driver: bridge
